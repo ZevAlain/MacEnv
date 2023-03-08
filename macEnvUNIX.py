@@ -64,6 +64,31 @@ class SSHClient:
             error_msg = f"Error occurred while downloading file: {e}"
             return error_msg
 
+    # 下载文件夹
+    def download_folder(self, remote_dir, local_dir):
+        for filename in self.sftp.listdir(remote_dir):
+            remote_path = os.path.join(remote_dir, filename)
+            local_path = os.path.join(local_dir, filename)
+            if '.' not in filename:
+                os.makedirs(local_path, exist_ok=True)
+                download_folder(remote_path, local_path)
+            else:
+                self.sftp.get(remote_path, local_path)
+
+    # 上传文件夹
+    def upload_folder(self, local_dir, remote_dir):
+        for filename in os.listdir(local_dir):
+            local_path = os.path.join(local_dir, filename)
+            remote_path = os.path.join(remote_dir, filename)
+            if os.path.isfile(local_path):
+                self.sftp.put(local_path, remote_path)
+            elif os.path.isdir(local_path):
+                try:
+                    self.sftp.stat(remote_path)
+                except IOError:
+                    self.sftp.mkdir(remote_path)
+                upload_folder(local_path, remote_path)
+
     def close(self):
         if self.sftp is not None:
             self.sftp.close()
